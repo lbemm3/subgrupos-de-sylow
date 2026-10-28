@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificador de Subgrupos de Sylow</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f8fafc; min-height: 100vh; padding: 2rem 1rem; color: #1e293b; }
+  .wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+  h1 { font-size: 1.4rem; font-weight: 700; text-align: center; color: #1e293b; }
+  .subtitle { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem; }
+  .card { background: #fff; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 4px #0001; padding: 1.25rem; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem; }
+  .input-row { display: flex; gap: 0.5rem; }
+  input[type=number] { flex: 1; border: 1px solid #cbd5e1; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 1.1rem; font-family: monospace; outline: none; transition: box-shadow .15s; }
+  input[type=number]:focus { box-shadow: 0 0 0 2px #60a5fa; }
+  .btn-main { background: #2563eb; color: #fff; border: none; border-radius: 0.75rem; padding: 0.5rem 1.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .btn-main:hover { background: #1d4ed8; }
+  .error { color: #ef4444; font-size: 0.75rem; margin-top: 0.35rem; }
+  .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+  .examples span { font-size: 0.75rem; color: #94a3b8; }
+  .ex-btn { font-family: monospace; font-size: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 9999px; border: 1px solid #e2e8f0; background: #f1f5f9; color: #475569; cursor: pointer; transition: all .15s; }
+  .ex-btn:hover { background: #eff6ff; border-color: #bfdbfe; }
+  .ex-btn.active { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; font-weight: 700; }
+  .banner { background: #2563eb; border-radius: 1rem; padding: 1rem 1.25rem; color: #fff; }
+  .banner-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: .08em; color: #bfdbfe; margin-bottom: 0.3rem; }
+  .banner-body { font-family: monospace; font-size: 1.05rem; }
+  .banner-note { font-size: 0.85rem; color: #bfdbfe; margin-top: 0.35rem; }
+  .fact-dot { color: #60a5fa; }
+  .fact-prime { font-weight: 700; }
+  .sylow-card { background: #fff; border-radius: 1rem; border: 1px solid; overflow: hidden; box-shadow: 0 1px 4px #0001; }
+  .sylow-card.green { border-color: #6ee7b7; }
+  .sylow-card.amber { border-color: #fcd34d; }
+  .sylow-head { padding: 0.75rem 1.25rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .sylow-card.green .sylow-head { background: #ecfdf5; }
+  .sylow-card.amber .sylow-head { background: #fffbeb; }
+  .sylow-head-title { font-weight: 700; color: #1e293b; font-size: 0.95rem; }
+  .sylow-head-order { color: #64748b; font-size: 0.85rem; font-family: monospace; margin-left: 0.4rem; }
+  .badge { font-size: 0.8rem; font-weight: 600; padding: 0.15rem 0.75rem; border-radius: 9999px; }
+  .badge.green { background: #d1fae5; color: #065f46; }
+  .badge.amber { background: #fef3c7; color: #92400e; }
+  .sylow-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem; color: #475569; }
+  .sylow-body strong { color: #334155; font-weight: 600; }
+  .info-box { border-radius: 0.75rem; padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 500; border: 1px solid; }
+  .info-box.green { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+  .info-box.amber { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+  .info-box.slate { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+  .cand-one { color: #059669; font-weight: 700; }
+  .cand-other { color: #1e293b; }
+  .cand-sep { color: #94a3b8; }
+  .prop-section { border-radius: 0.75rem; border: 1px solid #e0e7ff; background: #eef2ff; padding: 0.65rem 1rem; }
+  .prop-section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #4338ca; margin-bottom: 0.5rem; }
+  .prop-row { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.4rem 0; border-bottom: 1px solid #c7d2fe; font-size: 0.82rem; }
+  .prop-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .prop-row-line { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .prop-tag-yes { display: inline-block; background: #dcfce7; color: #166534; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; padding: 0.1rem 0.55rem; }
+  .prop-tag-no  { display: inline-block; background: #fee2e2; color: #991b1b; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; padding: 0.1rem 0.55rem; }
+  .concl { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 1rem; padding: 1.25rem; }
+  .concl h3 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #065f46; margin-bottom: 0.75rem; }
+  .concl ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .concl li { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.85rem; color: #047857; }
+  .concl li::before { content: '•'; color: #6ee7b7; font-weight: 700; flex-shrink: 0; margin-top: 0.1rem; }
+  .not-simple { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 1rem; padding: 1rem 1.25rem; }
+  .not-simple-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #92400e; margin-bottom: 0.4rem; }
+  .not-simple-body { font-size: 0.85rem; color: #78350f; line-height: 1.6; }
+  .summary { border-radius: 1rem; padding: 1rem 1.25rem; font-size: 0.85rem; font-weight: 500; border: 1px solid; }
+  .summary.sky   { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+  .summary.green { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+  .summary.amber { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+  .summary.slate { background: #f1f5f9; border-color: #e2e8f0; color: #475569; }
+  .inconclusive-count { background: #fafafa; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem 1.25rem; }
+  .inconclusive-count-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; margin-bottom: 0.4rem; }
+  .inconclusive-count-body { font-size: 0.85rem; color: #475569; line-height: 1.6; }
+  .ref-card { background: #fff; border-radius: 1rem; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 4px #0001; }
+  .ref-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; cursor: pointer; background: none; border: none; text-align: left; font-family: inherit; transition: background .15s; }
+  .ref-toggle:hover { background: #f8fafc; }
+  .ref-toggle-label { font-size: 0.85rem; font-weight: 600; color: #334155; }
+  .ref-toggle-hint { font-size: 0.75rem; color: #94a3b8; }
+  .ref-body { border-top: 1px solid #f1f5f9; }
+  .ref-row { display: flex; gap: 1rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; color: #475569; }
+  .ref-row:last-child { border-bottom: none; }
+  .ref-num { font-weight: 700; color: #2563eb; width: 2.5rem; flex-shrink: 0; }
+  .ref-row strong { color: #334155; font-weight: 600; }
+  .prop-ref-box { margin: 0 1.25rem 1rem; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.82rem; color: #3730a3; }
+  .prop-ref-box strong { color: #1e1b4b; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>Verificador de Subgrupos de Sylow</h1>
+    <p class="subtitle">Álgebra Abstrata · Prof. Laerte Bemm · UEM</p>
+  </div>
+
+  <div class="card">
+    <label for="ord-input">Ordem do grupo |G|</label>
+    <div class="input-row">
+      <input id="ord-input" type="number" min="2" max="9999999" value="72" placeholder="ex: 72">
+      <button class="btn-main" onclick="runAnalysis()">Analisar</button>
+    </div>
+    <p class="error" id="error-msg"></p>
+    <div class="examples">
+      <span>Ordens notáveis:</span>
+      <button class="ex-btn" onclick="setExample(12)">12</button>
+      <button class="ex-btn" onclick="setExample(15)">15</button>
+      <button class="ex-btn" onclick="setExample(28)">28</button>
+      <button class="ex-btn" onclick="setExample(33)">33</button>
+      <button class="ex-btn" onclick="setExample(56)">56</button>
+      <button class="ex-btn" onclick="setExample(63)">63</button>
+      <button class="ex-btn active" onclick="setExample(72)">72</button>
+      <button class="ex-btn" onclick="setExample(20449)">20449</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="ref-card">
+    <button class="ref-toggle" onclick="toggleRef()">
+      <span class="ref-toggle-label">📖 Referência: Teoremas de Sylow e Proposição do Índice</span>
+      <span class="ref-toggle-hint" id="ref-hint">▼ expandir</span>
+    </button>
+    <div class="ref-body" id="ref-body" style="display:none">
+      <div style="padding:.5rem 1.25rem .2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#2563eb;background:#f0f9ff;border-bottom:1px solid #e0f2fe;">Teoremas de Sylow</div>
+      <div class="ref-row"><span class="ref-num">1º</span><div><strong>Existência:</strong> Seja G grupo finito e p primo. Se p<sup>m</sup> | |G|, então G possui subgrupo de ordem p<sup>m</sup>.</div></div>
+      <div class="ref-row"><span class="ref-num">2º</span><div><strong>Conjugação:</strong> Sejam G grupo finito e p primo que divide |G|. Quaisquer dois p-Sylows de G são conjugados em G.</div></div>
+      <div class="ref-row"><span class="ref-num">3º</span><div><strong>Contagem:</strong> Sejam G grupo finito e |G| = p<sup>α</sup>b, com p primo e p ∤ b. O número n<sub>p</sub> de p-Sylows satisfaz: n<sub>p</sub> | b e n<sub>p</sub> ≡ 1 (mod p).</div></div>
+      <div class="ref-row"><span class="ref-num">Cor.</span><div><strong>Normalidade:</strong> H ⊴ G se e somente se H é o único p-Sylow, i.e., n<sub>p</sub> = 1.</div></div>
+      <div style="padding:.5rem 1.25rem .2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#4338ca;background:#eef2ff;border-bottom:1px solid #e0e7ff;border-top:1px solid #e2e8f0;">Proposição (Subgrupo Normal via Índice)</div>
+      <div class="ref-row"><span class="ref-num" style="color:#4338ca;">Prop.</span><div>Seja G grupo finito e H subgrupo de G com índice [G:H] = n. Se |G| ∤ n!, então existe N ⊴ G com {1<sub>G</sub>} ≠ N ⊆ H. Em particular, G não é simples.</div></div>
+      <div style="padding:.5rem 1.25rem .2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#92400e;background:#fffbeb;border-bottom:1px solid #fde68a;border-top:1px solid #e2e8f0;">Lemas e Teoremas Auxiliares</div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">Lagr.</span><div><strong>Teorema de Lagrange:</strong> Se G é grupo finito e H ≤ G, então |H| divide |G|. Se |G| é primo, os únicos subgrupos são {1<sub>G</sub>} e G — logo G é simples.</div></div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">T.2.2</span><div><strong>Centro de p-grupo:</strong> Se G é p-grupo finito não trivial, então Z(G) ≠ {1<sub>G</sub>}.</div></div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">L.1.9</span><div><strong>Grupos de ordem p²:</strong> Todo grupo de ordem p² é abeliano.</div></div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">L.3.4</span><div><strong>Ordem pq:</strong> p &lt; q primos ⟹ n<sub>q</sub> = 1 ⟹ G não é simples.</div></div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">L.3.5</span><div><strong>Ordem pqr:</strong> p &lt; q &lt; r primos. Se nenhum Sylow fosse normal, a contagem de elementos excederia pqr — contradição.</div></div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">L.3.6</span><div><strong>Ordem p<sup>n</sup>q com p<sup>n</sup> &lt; q:</strong> n<sub>q</sub> = 1 ⟹ q-Sylow é normal.</div></div>
+      <div class="ref-row"><span class="ref-num" style="color:#92400e;">L.3.7</span><div><strong>p-grupo, k &gt; 1:</strong> G abeliano ⟹ subgrupo de ordem p é normal; G não abeliano ⟹ Z(G) é normal não trivial. Em todo caso, G não é simples.</div></div>
+      <div style="padding:.5rem 1.25rem .2rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#475569;background:#f8fafc;border-bottom:1px solid #e2e8f0;border-top:1px solid #e2e8f0;">Observação sobre Contagem de Elementos</div>
+      <div class="ref-row"><span class="ref-num" style="color:#475569;">Obs.</span><div>Se o p-Sylow tem ordem prima p (α = 1), dois p-Sylows distintos intersectam-se apenas na identidade (Lagrange), tornando a contagem n<sub>p</sub>·(p−1) exata. Se α &gt; 1, p-Sylows distintos podem compartilhar subgrupos próprios — a contagem <em>não</em> é válida sem hipóteses adicionais.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function factorize(n) {
+  const f = {};
+  let d = 2, t = n;
+  while (d * d <= t) {
+    while (t % d === 0) { f[d] = (f[d]||0)+1; t = Math.floor(t/d); }
+    d++;
+  }
+  if (t > 1) f[t] = (f[t]||0)+1;
+  return f;
+}
+
+function getDivisors(n) {
+  const d = [];
+  for (let i = 1; i*i <= n; i++) {
+    if (n%i === 0) { d.push(i); if (i !== n/i) d.push(n/i); }
+  }
+  return d.sort((a,b) => a-b);
+}
+
+function legendreVal(n, p) {
+  let v = 0, pk = p;
+  while (pk <= n) { v += Math.floor(n/pk); pk *= p; }
+  return v;
+}
+
+function orderDividesFact(G_order, k) {
+  const f = factorize(G_order);
+  for (const [p, alpha] of Object.entries(f))
+    if (legendreVal(k, parseInt(p)) < alpha) return false;
+  return true;
+}
+
+function factStr(factors) {
+  const ps = Object.keys(factors).map(Number).sort((a,b) => a-b);
+  return ps.map((p,i) => {
+    const dot = i > 0 ? '<span class="fact-dot"> · </span>' : '';
+    const exp = factors[p] > 1 ? '<sup style="font-size:.7em">'+factors[p]+'</sup>' : '';
+    return dot+'<span class="fact-prime">'+p+'</span>'+exp;
+  }).join('');
+}
+
+function powStr(base, exp) { return exp > 1 ? base+'<sup>'+exp+'</sup>' : ''+base; }
+
+function candsHtml(cands) {
+  return cands.map((c,i) => {
+    const cls = c === 1 ? 'cand-one' : 'cand-other';
+    const sep = i < cands.length-1 ? '<span class="cand-sep">, </span>' : '';
+    return '<span class="'+cls+'">'+c+'</span>'+sep;
+  }).join('');
+}
+
+// Contagem válida apenas quando maior primo tem α = 1
+function elementCountArgument(n, analysis) {
+  const nonNormal = analysis.filter(a => !a.normal);
+  if (nonNormal.length < 2) return null;
+  const sorted = nonNormal.slice().sort((a,b) => b.p - a.p);
+  const big = sorted[0];
+  if (big.alpha !== 1) return null;
+  const nqMax = big.cands.filter(c => c > 1).at(-1);
+  if (!nqMax) return null;
+  const consumed = nqMax * (big.pAlpha - 1);
+  const remaining = n - consumed - 1;
+  if (remaining < 0) return null;
+  const forced = [];
+  for (const other of sorted.slice(1)) {
+    if (remaining === other.pAlpha - 1) {
+      forced.push({ prime: other.p, alpha: other.alpha, pAlpha: other.pAlpha, exact: true });
+    } else if (other.alpha === 1 && remaining < (other.pAlpha - 1) * (other.cands.filter(c=>c>1)[0] || 1)) {
+      forced.push({ prime: other.p, alpha: other.alpha, pAlpha: other.pAlpha, exact: false });
+    }
+  }
+  if (forced.length === 0) return null;
+  return { big, nqMax, consumed, remaining, forced };
+}
+
+function countingBlockedByAlpha(analysis) {
+  const nonNormal = analysis.filter(a => !a.normal);
+  if (nonNormal.length < 2) return null;
+  const big = nonNormal.slice().sort((a,b) => b.p - a.p)[0];
+  return big.alpha > 1 ? big : null;
+}
+
+let refOpen = false;
+const EXAMPLES = [12, 15, 28, 33, 56, 63, 72, 20449];
+
+function setExample(n) {
+  document.getElementById('ord-input').value = n;
+  document.querySelectorAll('.ex-btn').forEach((btn,i) => btn.classList.toggle('active', EXAMPLES[i] === n));
+  document.getElementById('error-msg').textContent = '';
+  render(n);
+}
+
+function runAnalysis() {
+  const raw = parseInt(document.getElementById('ord-input').value);
+  if (!raw || raw < 2 || raw > 9999999 || !Number.isInteger(raw)) {
+    document.getElementById('error-msg').textContent = 'Digite um inteiro entre 2 e 9.999.999.';
+    return;
+  }
+  document.getElementById('error-msg').textContent = '';
+  document.querySelectorAll('.ex-btn').forEach((btn,i) => btn.classList.toggle('active', EXAMPLES[i] === raw));
+  render(raw);
+}
+
+function toggleRef() {
+  refOpen = !refOpen;
+  document.getElementById('ref-body').style.display = refOpen ? 'block' : 'none';
+  document.getElementById('ref-hint').textContent = refOpen ? '▲ fechar' : '▼ expandir';
+}
+
+document.getElementById('ord-input').addEventListener('keydown', e => { if (e.key === 'Enter') runAnalysis(); });
+
+function render(n) {
+  const factors = factorize(n);
+  const primes = Object.keys(factors).map(Number).sort((a,b) => a-b);
+  const isPGroup = primes.length === 1;
+
+  const analysis = primes.map(p => {
+    const alpha = factors[p];
+    const pAlpha = Math.pow(p, alpha);
+    const b = n / pAlpha;
+    const cands = getDivisors(b).filter(d => d % p === 1);
+    const normal = cands.length === 1;
+    const propChecks = cands.filter(c => c > 1).map(c => ({ c, divides: orderDividesFact(n, c) }));
+    const propConcludes = propChecks.length > 0 && propChecks.every(ch => !ch.divides);
+    return { p, alpha, pAlpha, b, cands, normal, propChecks, propConcludes };
+  });
+
+  const allNormal = analysis.every(a => a.normal);
+  const someNormal = analysis.some(a => a.normal);
+  const notSimpleViaProp = !isPGroup && analysis.some(a =>
+    a.propConcludes && a.cands.filter(c=>c>1).every(c => !orderDividesFact(n, c))
+  );
+
+  const isPrime    = primes.length === 1 && analysis[0].alpha === 1;
+  const isPGroup_k = primes.length === 1 && analysis[0].alpha > 1;
+  const isPSquared = primes.length === 1 && analysis[0].alpha === 2;
+
+  const isPnQ = (() => {
+    if (primes.length !== 2) return false;
+    const [p1,p2] = primes, a1 = factors[p1], a2 = factors[p2];
+    const cases = [];
+    if (a2 === 1 && a1 > 1) cases.push({ p: p1, pn: Math.pow(p1,a1), alpha: a1, q: p2 });
+    if (a1 === 1 && a2 > 1) cases.push({ p: p2, pn: Math.pow(p2,a2), alpha: a2, q: p1 });
+    return cases.find(c => c.pn < c.q) || false;
+  })();
+
+  const isPQ = (() => {
+    if (primes.length !== 2) return false;
+    const [p1,p2] = primes;
+    if (factors[p1]===1 && factors[p2]===1) return { p: Math.min(p1,p2), q: Math.max(p1,p2) };
+    return false;
+  })();
+
+  const isPQR = (() => {
+    if (primes.length !== 3) return false;
+    if (!primes.every(p => factors[p] === 1)) return false;
+    const [p,q,r] = primes.slice().sort((a,b) => a-b);
+    const npW = [q,r,q*r].filter(d => d%p===1 && n%d===0)[0] || 1;
+    const nqW = [p,r,p*r].filter(d => d%q===1 && n%d===0)[0] || 1;
+    const nrW = [p,q,p*q].filter(d => d%r===1 && n%d===0)[0] || 1;
+    const count = npW*(p-1) + nqW*(q-1) + nrW*(r-1) + 1;
+    return { p, q, r, npW, nqW, nrW, count };
+  })();
+
+  const countArg = (!isPGroup && !allNormal && !isPnQ && !isPQ && !isPQR)
+    ? elementCountArgument(n, analysis) : null;
+
+  const blockedBy = (!isPGroup && !allNormal && !isPnQ && !isPQ && !isPQR && !countArg)
+    ? countingBlockedByAlpha(analysis) : null;
+
+  const conclusions = [];
+  if (!isPGroup && allNormal) {
+    conclusions.push('G é nilpotente: isomorfo ao produto direto dos seus p-subgrupos de Sylow.');
+    if (analysis.every(a => a.alpha <= 2))
+      conclusions.push('Como cada p-Sylow tem ordem p ou p² (abeliano pela Aula 13), G é abeliano.');
+  }
+  if (primes.length === 2 && analysis.every(a => a.alpha === 1)) {
+    const [p,q] = primes;
+    if ((q-1) % p !== 0)
+      conclusions.push('Como '+p+' \u2224 '+q+'\u22121 = '+(q-1)+', todo grupo de ordem '+n+' = '+p+'\u00b7'+q+' é cíclico.');
+  }
+
+  let summaryClass, summaryMsg;
+  if (isPrime) {
+    summaryClass = 'green';
+    summaryMsg = '\u2705 |G| = '+n+' é primo \u2192 pelo Lema de Lagrange G é simples.';
+  } else if (isPGroup) {
+    summaryClass = 'sky';
+    summaryMsg = 'G é um '+primes[0]+'-grupo. O único p-Sylow é o próprio G (trivialmente normal).';
+  } else if (allNormal) {
+    summaryClass = 'green';
+    summaryMsg = '\u2705 Em qualquer grupo de ordem '+n+', todos os p-subgrupos de Sylow são normais.';
+  } else if (someNormal || notSimpleViaProp || isPnQ || isPQ || isPQR || countArg) {
+    summaryClass = 'amber';
+    summaryMsg = '\u26a0\ufe0f G não é simples \u2014 existe subgrupo normal não trivial em qualquer grupo de ordem '+n+'.';
+  } else {
+    summaryClass = 'slate';
+    summaryMsg = '\u2139\ufe0f Nenhum p-subgrupo de Sylow é necessariamente normal em todo grupo de ordem '+n+'.';
+  }
+
+  let html = '';
+
+  html += '<div class="banner">'
+    + '<div class="banner-label">Fatoração</div>'
+    + '<div class="banner-body">|G| = '+n+' = '+factStr(factors)+'</div>'
+    + (isPGroup ? '<div class="banner-note">G é um '+primes[0]+'-grupo \u2014 ordem é potência de '+primes[0]+'.</div>' : '')
+    + '</div>';
+
+  // ---- Casos especiais (retorno antecipado) ----
+  if (isPrime) {
+    html += '<div class="not-simple" style="background:#ecfdf5;border-color:#6ee7b7;">'
+      + '<div class="not-simple-title" style="color:#065f46;">📗 Lema (Lagrange) \u2014 G é simples</div>'
+      + '<div class="not-simple-body" style="color:#047857;">Como |G| = '+n+' é primo, pelo Teorema de Lagrange os únicos subgrupos são {1<sub>G</sub>} e G. Logo <strong>G é simples</strong>.</div>'
+      + '</div>';
+    html += '<div class="summary '+summaryClass+'">'+summaryMsg+'</div>';
+    document.getElementById('results').innerHTML = html; return;
+  }
+
+  if (isPGroup_k) {
+    const p = primes[0], k = analysis[0].alpha;
+    html += '<div class="not-simple">'
+      + '<div class="not-simple-title">📙 Lema 3.7 \u2014 G não é simples</div>'
+      + '<div class="not-simple-body">Como |G| = '+p+'<sup>'+k+'</sup>, G é um p-grupo com k = '+k+' &gt; 1.<br><br>'
+      + '<strong>\u2460 G abeliano:</strong> pelo 1º Teorema de Sylow existe subgrupo de ordem '+p+', normal em G.<br>'
+      + '<strong>\u2461 G não abeliano:</strong> pelo Teorema 2.2, Z(G) \u2260 {e} e Z(G) \u2260 G \u2014 subgrupo normal não trivial próprio.<br><br>'
+      + 'Em todo caso, G possui subgrupo normal não trivial \u2014 <strong>G não é simples</strong>.'
+      + (isPSquared ? '<br><em>(k = 2: G é necessariamente abeliano pelo Lema 1.9.)</em>' : '')
+      + '</div></div>';
+    html += '<div class="summary '+summaryClass+'">'+summaryMsg+'</div>';
+    document.getElementById('results').innerHTML = html; return;
+  }
+
+  if (isPQ) {
+    const { p, q } = isPQ;
+    html += '<div class="not-simple">'
+      + '<div class="not-simple-title">📙 Lema 3.4 \u2014 G não é simples</div>'
+      + '<div class="not-simple-body">Com '+p+' &lt; '+q+' primos: n<sub>'+q+'</sub> | '+p+' \u27f9 n<sub>'+q+'</sub> \u2208 {1, '+p+'}.<br>'
+      + 'Como n<sub>'+q+'</sub> \u2261 1 (mod '+q+') e '+p+' &lt; '+q+', temos '+p+' \u2262 1 (mod '+q+'). Logo <strong>n<sub>'+q+'</sub> = 1</strong> \u2014 <strong>G não é simples</strong>.'
+      + '</div></div>';
+    html += '<div class="summary '+summaryClass+'">'+summaryMsg+'</div>';
+    document.getElementById('results').innerHTML = html; return;
+  }
+
+  if (isPnQ) {
+    const { p, pn, alpha, q } = isPnQ;
+    html += '<div class="not-simple">'
+      + '<div class="not-simple-title">📙 Lema 3.6 \u2014 G não é simples</div>'
+      + '<div class="not-simple-body">Como |G| = '+p+'<sup>'+alpha+'</sup>\u00b7'+q+' = '+n
+      + ', pelo 3º Teorema de Sylow: n<sub>'+q+'</sub> | '+pn+' \u27f9 n<sub>'+q+'</sub> \u2208 {'+getDivisors(pn).join(', ')+'}.<br>'
+      + 'Como n<sub>'+q+'</sub> \u2261 1 (mod '+q+') e '+pn+' &lt; '+q
+      + ', nenhum divisor de '+pn+' maior que 1 satisfaz a congruência. Logo <strong>n<sub>'+q+'</sub> = 1</strong> \u2014 o '+q+'-Sylow é <strong>normal em G</strong>.'
+      + '</div></div>';
+    html += '<div class="summary '+summaryClass+'">'+summaryMsg+'</div>';
+    document.getElementById('results').innerHTML = html; return;
+  }
+
+  if (isPQR) {
+    const { p, q, r, npW, nqW, nrW, count } = isPQR;
+    html += '<div class="not-simple">'
+      + '<div class="not-simple-title">📙 Lema 3.5 \u2014 G não é simples</div>'
+      + '<div class="not-simple-body">Com '+p+' &lt; '+q+' &lt; '+r+' primos. Se nenhum n<sub>p</sub> = 1, supondo '
+      + 'n<sub>'+p+'</sub> = '+npW+', n<sub>'+q+'</sub> = '+nqW+', n<sub>'+r+'</sub> = '+nrW+':<br>'
+      + '<span style="font-family:monospace">'+npW+'\u00b7('+p+'\u22121) + '+nqW+'\u00b7('+q+'\u22121) + '+nrW+'\u00b7('+r+'\u22121) + 1 = '+count+' &gt; '+n+'</span> \u2014 contradição.<br>'
+      + 'Logo algum n<sub>p</sub> = 1 \u2014 <strong>G não é simples</strong>.'
+      + '</div></div>';
+    html += '<div class="summary '+summaryClass+'">'+summaryMsg+'</div>';
+    document.getElementById('results').innerHTML = html; return;
+  }
+
+  // ---- Sylow cards (análise geral) ----
+  analysis.forEach(function(a) {
+    const { p, alpha, pAlpha, b, cands, normal, propChecks, propConcludes } = a;
+    const col = normal ? 'green' : 'amber';
+    const badgeTxt = normal ? '🟢 Necessariamente normal' : '🟡 Depende do grupo';
+    const infoTxt = normal
+      ? '\u2713 n<sub>'+p+'</sub> = 1 é o único candidato \u2192 o '+p+'-Sylow é normal em qualquer grupo de ordem '+n+'.'
+      : 'n<sub>'+p+'</sub> \u2208 {'+cands.join(', ')+'} \u2192 normalidade não garantida pelos Teoremas de Sylow.';
+
+    let propHtml = '';
+    if (!normal && propChecks.length > 0) {
+      const rows = propChecks.map(function(ck) {
+        const sym = ck.divides ? '|' : '\u2224';
+        const label = ck.divides
+          ? '<span class="prop-tag-no">Proposição não se aplica</span>'
+          : '<span class="prop-tag-yes">\u2203 N \u22b4 G não trivial</span>';
+        return '<div class="prop-row"><div class="prop-row-line">'
+          + '<span style="font-family:monospace">[G : N<sub>G</sub>(P)] = '+ck.c+'</span>'
+          + '<span style="color:#94a3b8">\u2192</span>'
+          + '<span style="font-family:monospace">|G| = '+n+' <strong>'+sym+'</strong> '+ck.c+'!</span>'
+          + label+'</div></div>';
+      }).join('');
+      const summary = propConcludes
+        ? '<div style="margin-top:.5rem;font-size:.8rem;font-weight:600;color:#3730a3">\u2192 Existe N \u22b4 G não trivial: <strong>G não é simples</strong>.</div>' : '';
+      propHtml = '<div class="prop-section"><div class="prop-section-title">Proposição do Índice (n<sub>'+p+'</sub> &gt; 1)</div>'+rows+summary+'</div>';
+    }
+
+    let countNoteHtml = '';
+    if (!normal && alpha > 1 && propChecks.length > 0 && !propConcludes) {
+      countNoteHtml = '<div class="info-box slate">'
+        + '\u26a0\ufe0f <strong>Contagem de elementos não aplicável:</strong> o '+p+'-Sylow tem ordem '
+        + powStr(p,alpha)+' = '+pAlpha+' (\u03b1 = '+alpha+' &gt; 1). Dois '+p+'-Sylows distintos podem '
+        + 'compartilhar subgrupos de ordem '+p+(alpha > 2 ? ', '+p+'^2, ...' : '')+', tornando a contagem inválida sem hipóteses adicionais.'
+        + '</div>';
+    }
+
+    html += '<div class="sylow-card '+col+'">'
+      + '<div class="sylow-head"><div>'
+      + '<span class="sylow-head-title">'+p+'-subgrupo de Sylow</span>'
+      + '<span class="sylow-head-order">(ordem '+powStr(p,alpha)+' = '+pAlpha+')</span>'
+      + '</div><span class="badge '+col+'">'+badgeTxt+'</span></div>'
+      + '<div class="sylow-body">'
+      + '<div><strong>Decomposição:</strong> <span style="font-family:monospace">|G| = '+powStr(p,alpha)+' \u00b7 '+b+(b===1?' <span style="color:#94a3b8">(b=1)</span>':'')+' </span></div>'
+      + '<div><strong>Restrições (3º Teorema):</strong> <span style="font-family:monospace">n<sub>'+p+'</sub> | '+b+' &ensp;e&ensp; n<sub>'+p+'</sub> \u2261 1 (mod '+p+')</span></div>'
+      + '<div><strong>Candidatos a n<sub>'+p+'</sub>:</strong> <span style="font-family:monospace">{'+candsHtml(cands)+'}</span></div>'
+      + '<div class="info-box '+col+'">'+infoTxt+'</div>'
+      + propHtml + countNoteHtml
+      + '</div></div>';
+  });
+
+  // ---- Contagem de elementos ----
+  if (countArg) {
+    const { big, nqMax, consumed, remaining, forced } = countArg;
+    const f = forced[0];
+    const qStr = powStr(big.p, big.alpha);
+    const fStr = powStr(f.prime, f.alpha);
+    const exactMsg = f.exact
+      ? 'Como um '+f.prime+'-Sylow possui exatamente <strong>'+f.pAlpha+' \u2212 1 = '+(f.pAlpha-1)+'</strong> elementos não-identidade e sobraram exatamente <strong>'+remaining+'</strong>, ele é <strong>único</strong> \u2014 um segundo ultrapassaria |G|.'
+      : 'Os <strong>'+remaining+'</strong> elementos não-identidade restantes não comportam mais de um subgrupo de ordem '+f.pAlpha+' \u2014 ele é <strong>único</strong>.';
+
+    html += '<div class="not-simple" style="background:#f0fdf4;border-color:#6ee7b7;">'
+      + '<div class="not-simple-title" style="color:#065f46;">🔢 Contagem de Elementos \u2014 Subgrupo de Sylow Normal</div>'
+      + '<div class="not-simple-body" style="color:#047857;line-height:1.8;">'
+      + 'Como \u03b1 = 1, o '+big.p+'-Sylow tem ordem prima \u2014 quaisquer dois '+big.p+'-Sylows distintos intersectam-se apenas na identidade (Lagrange).<br>'
+      + 'Supondo n<sub>'+big.p+'</sub> = '+nqMax+' (maior candidato não trivial), teremos '+nqMax+' subgrupos de ordem '+qStr+' consumindo '
+      + '<strong>'+nqMax+'\u00b7('+big.pAlpha+'\u22121) = '+consumed+'</strong> elementos não-identidade.<br>'
+      + 'Sobram <strong>'+n+' \u2212 '+consumed+' \u2212 1 = '+remaining+'</strong> elementos não-identidade.<br>'
+      + 'Pelo 1º Teorema de Sylow existe subgrupo H de ordem '+fStr+' = '+f.pAlpha+'. '+exactMsg+'<br>'
+      + 'Pelo 2º Teorema de Sylow: H único \u21d2 <strong>H \u22b4 G</strong> \u2014 <strong>G não é simples</strong>.'
+      + '</div></div>';
+  }
+
+  // ---- Não simples via Proposição do Índice ----
+  if (notSimpleViaProp) {
+    const pNames = analysis.filter(a => a.propConcludes).map(a => a.p+'-Sylows').join(' e ');
+    html += '<div class="not-simple" style="background:#f5f3ff;border-color:#c4b5fd;">'
+      + '<div class="not-simple-title" style="color:#6d28d9;">🔒 Não Simples pela Proposição do Índice</div>'
+      + '<div class="not-simple-body" style="color:#4c1d95;">Aplicada aos '+pNames+': existe N \u22b4 G não trivial '
+      + '(não necessariamente um Sylow) em qualquer grupo de ordem '+n+' \u2014 <strong>G não é simples</strong>.</div>'
+      + '</div>';
+  }
+
+  // ---- Contagem bloqueada por α > 1 ----
+  if (blockedBy) {
+    const bk = blockedBy;
+    html += '<div class="inconclusive-count">'
+      + '<div class="inconclusive-count-title">\u2139\ufe0f Argumento de contagem inaplicável</div>'
+      + '<div class="inconclusive-count-body">O '+bk.p+'-Sylow tem ordem '+powStr(bk.p,bk.alpha)+' = '+bk.pAlpha+' (\u03b1 = '+bk.alpha+' &gt; 1). '
+      + 'Dois '+bk.p+'-Sylows distintos podem compartilhar subgrupos próprios, tornando a contagem inválida sem hipóteses adicionais.<br><br>'
+      + 'Os métodos automáticos disponíveis não são suficientes para concluir sobre a simplicidade de <em>todo</em> grupo de ordem '+n+'. Uma análise caso a caso seria necessária.'
+      + '</div></div>';
+  }
+
+  if (conclusions.length > 0) {
+    html += '<div class="concl"><h3>Conclusões sobre a estrutura de G</h3><ul>'
+      + conclusions.map(c => '<li>'+c+'</li>').join('')
+      + '</ul></div>';
+  }
+
+  html += '<div class="summary '+summaryClass+'">'+summaryMsg+'</div>';
+  document.getElementById('results').innerHTML = html;
+}
+
+render(72);
+</script>
+</body>
+</html>
